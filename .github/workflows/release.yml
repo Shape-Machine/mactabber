@@ -22,7 +22,8 @@ jobs:
       - name: Package
         run: |
           ditto -c -k --keepParent dist/MacTabber.app "dist/MacTabber-${GITHUB_REF_NAME}.zip"
-          shasum -a 256 "dist/MacTabber-${GITHUB_REF_NAME}.zip" > "dist/MacTabber-${GITHUB_REF_NAME}.zip.sha256"
+          # Hash from inside dist/ so the file lists the bare zip name and `shasum -c` works next to the download.
+          (cd dist && shasum -a 256 "MacTabber-${GITHUB_REF_NAME}.zip" > "MacTabber-${GITHUB_REF_NAME}.zip.sha256")
 
       - name: Publish release
         env:
