@@ -6,18 +6,24 @@ configuration="${1:-release}"
 app_dir="$repo_dir/dist/MacTabber.app"
 # Optional: VERSION=1.2.3 stamps CFBundleShortVersionString; BUILD_NUMBER sets CFBundleVersion.
 # Optional: UNIVERSAL=1 builds for both arm64 and x86_64.
-build_flags=(-c "$configuration")
-if [[ "${UNIVERSAL:-0}" == "1" ]]; then
-    build_flags+=(--arch arm64 --arch x86_64)
-fi
-
 cd "$repo_dir"
-swift build "${build_flags[@]}"
-binary_dir="$(swift build "${build_flags[@]}" --show-bin-path)"
-
 rm -rf "$app_dir"
 mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
-cp "$binary_dir/MacTabber" "$app_dir/Contents/MacOS/MacTabber"
+
+if [[ "${UNIVERSAL:-0}" == "1" ]]; then
+    # Build each arch separately and merge; multi-arch `swift build` goes through
+    # XCBuild, which rejects swiftLanguageMode on some Xcode versions.
+    slices=()
+    for arch in arm64 x86_64; do
+        swift build -c "$configuration" --arch "$arch"
+        slices+=("$(swift build -c "$configuration" --arch "$arch" --show-bin-path)/MacTabber")
+    done
+    lipo -create "${slices[@]}" -output "$app_dir/Contents/MacOS/MacTabber"
+else
+    swift build -c "$configuration"
+    cp "$(swift build -c "$configuration" --show-bin-path)/MacTabber" "$app_dir/Contents/MacOS/MacTabber"
+fi
+
 cp "$repo_dir/Resources/Info.plist" "$app_dir/Contents/Info.plist"
 if [[ -n "${VERSION:-}" ]]; then
     plutil -replace CFBundleShortVersionString -string "$VERSION" "$app_dir/Contents/Info.plist"
