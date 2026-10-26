@@ -5,8 +5,19 @@ with a visible window on the current Desktop (Space).
 
 ## Install
 
+From source:
+
 ```sh
 ./scripts/install.sh
+```
+
+From a release: download `MacTabber-vX.Y.Z.zip` from
+[Releases](https://github.com/Shape-Machine/mactabber/releases), unzip it, and move
+`MacTabber.app` to `/Applications`. Releases are ad-hoc signed and not notarized, so
+clear the download quarantine before the first launch:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/MacTabber.app
 ```
 
 On first launch, allow MacTabber in **System Settings → Privacy & Security →
@@ -25,3 +36,14 @@ MacTabber registers itself in **System Settings → General → Login Items**.
 
 macOS 14 or newer and Swift 6/Xcode 16 or newer. The app uses only public Apple
 frameworks: AppKit, Core Graphics, Accessibility, and Service Management.
+
+## Releasing
+
+Push a version tag; the `Release` GitHub Actions workflow builds a universal
+(arm64 + x86_64) app, stamps the version from the tag, and publishes a GitHub
+release with the zip and its SHA-256 checksum.
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
